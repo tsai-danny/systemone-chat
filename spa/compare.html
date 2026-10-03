@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SystemOne 模型語言能力檢測台</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>SystemOne <span>模型語言能力檢測台</span></h1>
+    <p class="sub">三語比對（純英文 / 純中文 / 中英混雜）— 附加評測工具 · 規格 §5 語言矩陣 · §8.1</p>
+  </div>
+  <div class="conn">
+    <input id="baseUrl" type="text" spellcheck="false" placeholder="http://localhost:8080/v1/systemone">
+    <button id="probeBtn" class="btn ghost" title="偵測 /health 與 /v1/models">偵測</button>
+    <span id="connBadge" class="badge off">未偵測</span>
+    <a class="btn ghost nav-link" href="index.html">← 返回測試台</a>
+  </div>
+</header>
+
+<main class="compare-main">
+  <!-- 比對控制 + 結果 -->
+  <section class="pane">
+    <div class="pane-head">
+      <h2>三語比對</h2>
+      <select id="compareSel" title="選擇要比對的情境"></select>
+      <button id="compareBtn" class="btn primary sm" title="依序送出同情境的三種語言請求">執行比對</button>
+    </div>
+    <div id="compareBox" class="compare hidden"></div>
+    <p class="hint">同情境依序送出 en → zh → mix 三個請求（串行，避免排隊干擾延時），比較 choice 一致性、score/noul 偏移、confidence、延時與 input_tokens。zh＝state 與 instructions/criteria 全中文；mix＝全混雜（中文骨架＋英文關鍵字，反映生產環境真實輸入）。使用內建情境，不受測試台編輯區影響。</p>
+
+    <div class="block">
+      <div class="block-head"><label>比對紀錄（最近 20 筆，獨立儲存）</label>
+        <button id="clearHistoryBtn" class="btn ghost sm">清空</button></div>
+      <div id="historyList" class="history"></div>
+    </div>
+  </section>
+
+  <!-- 模型語言矩陣對照（規格 §5） -->
+  <section class="pane">
+    <div class="pane-head"><h2>模型語言矩陣</h2></div>
+    <div id="langMatrix"></div>
+    <p class="hint">解讀：Julia-1 / OpenJev 支援中文，三語結果應較一致；Laya / Kev-4B / lev 僅英文，中文欄位的偏移即語言能力限制的訊號。input_tokens 差異反映 tokenizer 對各語言的效率。</p>
+  </section>
+</main>
+<footer>
+  <span>規格見 <code>../docs/systemone_api.md</code> §5 / §8.1</span>
+  <span>choice 機率總和 = 1 · score 為加權期望索引 · noul = P(true) · output_tokens 恆為 0</span>
+</footer>
+
+<script src="common.js"></script>
+<script src="compare.js"></script>
+</body>
+</html>

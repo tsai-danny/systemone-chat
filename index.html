@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="refresh" content="0; url=spa/index.html">
+<title>SystemOne 啟動頁</title>
+<link rel="stylesheet" href="spa/styles.css">
+<style>
+  html,body{height:100%;margin:0;display:flex;align-items:center;justify-content:center}
+  .launch{text-align:center;padding:32px 40px;border:1px solid #2a3340;border-radius:12px;background:#151a21;max-width:520px}
+  .launch h1{font-size:22px;margin:0 0 6px}
+  .launch p{margin:0 0 20px;color:#8fa3b8;font-size:13px}
+  .launch .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  .launch small{display:block;margin-top:18px;color:#5f7183;font-size:12px}
+  .launch small a{color:#7ea6c4}
+</style>
+</head>
+<body>
+  <div class="launch">
+    <h1>SystemOne 決策模型測試台</h1>
+    <p>正在進入測試台…若未自動跳轉，按下方按鈕。</p>
+    <div class="row">
+      <a class="btn" href="spa/index.html">進入測試台</a>
+      <a class="btn ghost" href="spa/compare.html">語言能力檢測</a>
+    </div>
+    <small>
+      文件：<a href="docs/user_manual.html">使用手冊</a> ·
+      <a href="docs/systemone_api.md">規格書（Markdown）</a> ·
+      <a href="docs/model_capability_test_report.html">測試報告</a>
+    </small>
+  </div>
+  <script>location.replace("spa/index.html");</script>
+</body>
+</html>

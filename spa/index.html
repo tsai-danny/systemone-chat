@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SystemOne 決策模型測試台</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <h1>SystemOne <span>決策模型測試台</span></h1>
+    <p class="sub">POST /v1/systemone — TypeSafe-compatible · 單次 forward pass · 不生成 token</p>
+  </div>
+  <div class="conn">
+    <input id="baseUrl" type="text" spellcheck="false" placeholder="http://localhost:8080/v1/systemone">
+    <button id="probeBtn" class="btn ghost" title="偵測 /health 與 /v1/models">偵測</button>
+    <span id="connBadge" class="badge off">未偵測</span>
+    <a class="btn ghost nav-link" href="compare.html" title="模型語言能力檢測（三語比對）">語言能力檢測</a>
+  </div>
+</header>
+
+<main>
+  <!-- ============ 左側：請求 ============ -->
+  <section class="pane" id="requestPane">
+    <div class="pane-head">
+      <h2>請求</h2>
+      <select id="presetSel" title="載入預設範例">
+        <option value="">— 載入預設範例 —</option>
+      </select>
+      <button id="savePresetBtn" class="btn ghost sm" title="將目前編輯內容存為預設">儲存預設</button>
+      <button id="delPresetBtn" class="btn ghost sm" title="刪除選取的「我的預設」">刪除預設</button>
+    </div>
+
+    <!-- state -->
+    <div class="block">
+      <div class="block-head">
+        <label>state（要評估的內容）</label>
+        <select id="stateMode">
+          <option value="text">文字</option>
+          <option value="json">JSON 值</option>
+          <option value="messages">Chat messages（JSON）</option>
+        </select>
+      </div>
+      <textarea id="stateText" rows="5" spellcheck="false"
+        placeholder="例：Customer message: I was charged twice for my order last week and nobody has replied."></textarea>
+      <p class="hint">文字模式直接送字串；JSON 值模式解析後以 JSON 文字餵模型；messages 模式接受 <code>[{"role":"user","content":[...]}]</code>，其中 <code>image_url</code> part 視為圖片（僅 data URL）。</p>
+    </div>
+
+    <!-- images -->
+    <div class="block">
+      <div class="block-head">
+        <label>images（選填，data URL）</label>
+        <label class="btn ghost sm file-btn">＋ 加入圖片<input id="imageFiles" type="file" accept="image/*" multiple hidden></label>
+      </div>
+      <div id="imageList" class="image-list"></div>
+      <p class="hint">圖片需要支援 vision 的模型（如 OpenJev）+ mmproj，否則回傳 501。</p>
+    </div>
+
+    <!-- questions -->
+    <div class="block">
+      <div class="block-head">
+        <label>questions（不可為空）</label>
+        <button id="addQBtn" class="btn ghost sm">＋ 新增問題</button>
+      </div>
+      <div id="questionList" class="question-list"></div>
+    </div>
+
+    <div class="actions">
+      <button id="sendBtn" class="btn primary">送出請求</button>
+      <label class="chk"><input id="previewToggle" type="checkbox"> 預覽請求 JSON</label>
+    </div>
+    <pre id="previewBox" class="preview hidden"></pre>
+  </section>
+
+  <!-- ============ 右側：結果 ============ -->
+  <section class="pane" id="responsePane">
+    <div class="pane-head">
+      <h2>結果</h2>
+      <label class="chk"><input id="rawToggle" type="checkbox"> 顯示原始 JSON</label>
+    </div>
+
+    <div id="statusLine" class="status-line hidden">
+      <span id="httpBadge" class="badge"></span>
+      <span id="latencyInfo"></span>
+      <span id="usageInfo"></span>
+    </div>
+
+    <div id="errorBox" class="error-box hidden"></div>
+    <div id="answersBox" class="answers"></div>
+    <pre id="rawBox" class="preview hidden"></pre>
+
+    <div class="block">
+      <div class="block-head"><label>歷史紀錄（最近 20 筆，存在 localStorage）</label>
+        <button id="clearHistoryBtn" class="btn ghost sm">清空</button></div>
+      <div id="historyList" class="history"></div>
+    </div>
+  </section>
+</main>
+<footer>
+  <span>規格見 <code>../docs/systemone_api.md</code></span>
+  <span>choice 機率總和 = 1 · score 為加權期望索引 · noul = P(true) · output_tokens 恆為 0</span>
+</footer>
+
+<!-- 問題範本（由 JS 克隆） -->
+<template id="qTemplate">
+  <div class="q-card">
+    <div class="q-row">
+      <input class="q-id" type="text" value="q1" spellcheck="false" title="問題 id">
+      <select class="q-type">
+        <option value="choice">choice</option>
+        <option value="score">score</option>
+        <option value="noul">noul</option>
+      </select>
+      <button class="btn ghost sm q-del" title="刪除">✕</button>
+    </div>
+    <textarea class="q-instr" rows="2" spellcheck="false" placeholder="instructions：問題內容"></textarea>
+    <div class="q-criteria"></div>
+  </div>
+</template>
+
+<!-- choice criteria 範本 -->
+<template id="choiceRowTemplate">
+  <div class="crit-row">
+    <input class="crit-key" type="text" spellcheck="false" placeholder="選項 (option)">
+    <input class="crit-val" type="text" spellcheck="false" placeholder="描述（可留空 = null）">
+    <button class="btn ghost sm crit-del" title="刪除選項">✕</button>
+  </div>
+</template>
+
+<!-- score criteria 範本 -->
+<template id="scoreRowTemplate">
+  <div class="crit-row">
+    <span class="crit-idx"></span>
+    <input class="crit-level" type="text" spellcheck="false" placeholder="等級描述（由低到高）">
+    <button class="btn ghost sm crit-del" title="刪除等級">✕</button>
+  </div>
+</template>
+
+<script src="common.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
